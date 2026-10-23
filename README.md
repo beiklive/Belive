@@ -8,6 +8,7 @@ UI 宿主程序。界面库用 [BekUI](https://github.com/beiklive/BekUI)（`bkl
 ```
 3rd/BekUI/        三方库：BekUI（含它自己的子模块：SDL3 / imgui / yoga / tweeny / stb / json / webp / lunasvg / plutovg）
 src/main.cpp      主程序入口（当前是最小宿主：链进 bklv、起窗口、读 exe 旁边的 resources/）
+resources/        Belive 自己的资源覆盖层（自有主题 resources/theme/belive/）
 CMakeLists.txt    构建入口
 CMakePresets.json 两套 Windows 工具链的 preset（windows-msvc / windows-mingw）
 .vscode/          共享的编辑器配置（CMake Tools 走 preset、C++ 标准、推荐扩展）
@@ -64,6 +65,14 @@ cmake --preset windows-mingw         # 配置到 build/mingw（需要 MSYS2 ming
 cmake --build --preset windows-mingw
 ```
 
+两个 preset 的构建目录是分开的，但**产物都落在 `dist/`**（bklv 按这个目录找 exe 和资源）。
+所以来回切 preset 时，另一套工具链可能因为"输出比自己的 .obj 新"而跳过链接，看到的是上一次
+的 exe —— 这时加 `--clean-first`（或先删 `dist/belive.exe`）：
+
+```bash
+cmake --build --preset windows-msvc --clean-first
+```
+
 ### VS Code
 
 装两个扩展：**CMake Tools**（`ms-vscode.cmake-tools`）与 **C/C++**（`ms-vscode.cpptools`，
@@ -89,6 +98,41 @@ preset，不要删缓存硬来。
 
 运行：`dist/belive.exe`（资源按「exe 所在目录 /resources」解析，所以别把 exe 单独拷走）。
 截图自检：`dist/belive.exe --screenshot shot.png --frames 10`。
+
+## 样式放哪里
+
+资源**只在运行时从 exe 旁边的 `dist/resources` 读**（`bklv/core/resource.cpp` 用
+`SDL_GetBasePath()`；Switch 上是 `romfs:/`）。`dist/resources` 是构建产物：
+
+```
+3rd/BekUI/resources/  先整目录拷到 dist/resources（公共素材：字体、文案、默认主题、音效）
+resources/            Belive 自己的覆盖层，拷在**后面**，同名覆盖（自有主题、自有图片）
+```
+
+所以改样式改这两处之一，**不要改 `dist/resources`**（下次构建会被删掉重建）：
+
+- 要**改 Belive 自己的外观**：`resources/theme/belive/`（已在用）
+- 要改公共默认值（所有主题共享的底子）：`3rd/BekUI/resources/theme/default/`，但那是子模块，
+  dirty 之后 `git submodule update` 就丢，只有确认要贡献回 BekUI 时才这么干
+
+`resources/theme/belive/` 的结构（最小主题，其余全部回退 default）：
+
+```
+theme.json                   name / files[] / colorScheme；files[] 是外观文件的**显式清单**
+tokens/colors.json           色板：只写要改的 key，写 color.<组>.<键>
+tokens/metrics.json          数值：一个都不改也要留这份空文件，缺它装载时会报"打不开"
+base/**.json  widget/**.json  （可选）外观覆盖，每个文件都是整份覆盖，所以文件必须在 files[] 里登记
+sound.json                   （可选）音效表，缺省继承 default
+```
+
+几条硬规则：
+
+- `files[]` **不扫目录**（romfs 上不能列目录），没登记的外观文件不会加载，也不报错
+- 外观名 = 相对主题目录的路径去掉扩展名（`base/button/button.json` → `base/button/button`），
+  挪文件位置等于改名
+- 颜色/数值按 key 回退 default，外观文件按整份文件回退 → 想改一点点就往薄了写
+- 新主题要在启动时选中：`app.setTheme("belive")`（`src/main.cpp` 里已经这么做了），
+  或临时用环境变量 `BKLV_THEME=belive`；`themes.json` 的 `available` 只影响换肤列表
 
 ## 更新三方库
 

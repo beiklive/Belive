@@ -85,8 +85,9 @@ set_target_properties(belive PROPERTIES
 # ---------------------------------------------------------------------------
 #
 # bklv 按「可执行文件目录/resources/...」找资源（见 bklv/core/resource.hpp），
-# 所以字体 / 文案 / 主题这三样必须躺在 exe 旁边。这里从三方库里拷，Belive 自己
-# 不维护一份副本 —— 主题是随库走的，两份早晚会不一致。
+# 所以字体 / 文案 / 主题这三样必须躺在 exe 旁边。公共素材从三方库里拷；
+# Belive 自己的东西（自有主题、自有图片）放在仓库根 `resources/`，作为**覆盖层**
+# 在库的资源和之后叠上去 —— 这样不用改子模块，升级 BekUI 也不会打架。
 #
 # 先删后拷（不是只 copy_directory）：copy_directory 只加不删，主题目录改布局之后
 # 旧文件会一直留着，骗过「磁盘 vs theme.json 的 files[]」这类校验。
@@ -101,6 +102,22 @@ if(EXISTS "${BELIVE_RESOURCE_SRC}")
         VERBATIM
     )
     add_dependencies(belive belive_resources)
+endif()
+
+# 覆盖层：`copy_directory` 是合并（同名覆盖、不删已有的），所以顺序很重要 ——
+# 必须排在库的资源之后。Belive 的主题（resources/theme/belive/）就靠这一步进 dist。
+set(BELIVE_RESOURCE_OVERLAY "${CMAKE_CURRENT_SOURCE_DIR}/resources")
+if(EXISTS "${BELIVE_RESOURCE_OVERLAY}")
+    add_custom_target(belive_resources_overlay
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${BELIVE_RESOURCE_OVERLAY}" "${BELIVE_OUT_DIR}/resources"
+        COMMENT "叠加 Belive 自己的 resources/（覆盖层）"
+        VERBATIM
+    )
+    if(TARGET belive_resources)
+        add_dependencies(belive_resources_overlay belive_resources)
+    endif()
+    add_dependencies(belive belive_resources_overlay)
 endif()
 
 message(STATUS "Belive")

@@ -1,0 +1,9 @@
+{
+  "$comment": "Belive 自己的主题。只覆盖需要的部分，没写的颜色/数值/外观全部回退 default —— 所以 files 可以是空数组，色板也可以只写几个 key。改样式就改这个目录里的 JSON，别去动 3rd/BekUI/resources/theme/default/。",
+  "name": "belive",
+  "version": 1,
+  "schemaVersion": 1,
+  "colorScheme": "dark",
+  "description": "Belive 主色调：按钮走蓝色、正文用浅色",
+  "files": []
+}

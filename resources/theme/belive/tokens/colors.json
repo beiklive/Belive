@@ -1,0 +1,10 @@
+{
+  "$comment": "只写要改的 key，其余自动回退 default（按键回退，不是整份替换）。主题 key 的写法是 color.<组>.<键>，所以这里是 button.defaultBg -> color.button.defaultBg。",
+  "text": {
+    "primary": "#e6e8ec"
+  },
+  "button": {
+    "defaultBg": "#1f6feb",
+    "defaultText": "#ffffff"
+  }
+}
