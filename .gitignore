@@ -6,7 +6,10 @@ dist/
 cmake-build-*/
 CMakeUserPresets.json
 .vs/
-.vscode/
+# VSCode：共享的 CMake 配置要进仓库，其余本地文件（launch.json 之类）忽略
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 .idea/
 
 # Windows / macOS 杂项

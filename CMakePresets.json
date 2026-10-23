@@ -1,0 +1,46 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 24,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "windows-msvc",
+      "displayName": "Windows · MSVC 2022 · GL",
+      "description": "装了 Visual Studio 2022 就能直接编，不需要配 PATH。VS Code 默认选这个。",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build/msvc",
+      "cacheVariables": {
+        "BKLV_GRAPHICS": "gl"
+      }
+    },
+    {
+      "name": "windows-mingw",
+      "displayName": "Windows · MinGW-w64 (Ninja) · GL",
+      "description": "MSYS2 的 mingw64 工具链。MSYS2 不在 E:/bin/msys64 就改下面两个编译器路径。",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/mingw",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "E:/bin/msys64/mingw64/bin/gcc.exe",
+        "CMAKE_CXX_COMPILER": "E:/bin/msys64/mingw64/bin/g++.exe",
+        "BKLV_GRAPHICS": "gl"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "windows-msvc",
+      "displayName": "Windows · MSVC 2022 · GL (Release)",
+      "configurePreset": "windows-msvc",
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-mingw",
+      "displayName": "Windows · MinGW-w64 (Ninja) · GL",
+      "configurePreset": "windows-mingw"
+    }
+  ]
+}

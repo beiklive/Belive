@@ -1,0 +1,12 @@
+{
+  // 用 presets，不用 kit：kit 选 Visual Studio 时，如果 build/ 里已经躺着 Ninja 的
+  // 缓存，CMake 会直接拒绝（generator does not match the generator used
+  // previously: Ninja）。走 presets 之后每个工具链有自己的构建目录，不会再撞。
+  "cmake.useCMakePresets": "always",
+  "cmake.configureOnOpen": true,
+  "cmake.buildBeforeRun": true,
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "C_Cpp.default.cppStandard": "c++17",
+  "C_Cpp.default.cStandard": "c11",
+  "files.encoding": "utf8"
+}

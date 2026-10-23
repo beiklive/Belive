@@ -9,6 +9,8 @@ UI 宿主程序。界面库用 [BekUI](https://github.com/beiklive/BekUI)（`bkl
 3rd/BekUI/        三方库：BekUI（含它自己的子模块：SDL3 / imgui / yoga / tweeny / stb / json / webp / lunasvg / plutovg）
 src/main.cpp      主程序入口（当前是最小宿主：链进 bklv、起窗口、读 exe 旁边的 resources/）
 CMakeLists.txt    构建入口
+CMakePresets.json 两套 Windows 工具链的 preset（windows-msvc / windows-mingw）
+.vscode/          共享的编辑器配置（CMake Tools 走 preset、C++ 标准、推荐扩展）
 ```
 
 ## 拿代码
@@ -48,6 +50,42 @@ cmake -S . -B build/gl -G "Visual Studio 17 2022" -DBKLV_GRAPHICS=gl
 
 生成器是**配置时定死**的：已经配好的构建目录不能换 `-G`，要换先删目录。
 `-DBKLV_GRAPHICS` 也是缓存变量，`build/vk` 里必须显式传 `vk`，否则会编出 GL 版。
+
+### 用 preset 构建（推荐）
+
+`CMakePresets.json` 已经把两套 Windows 工具链分开写在各自的构建目录里，命令行和
+VS Code 用的是同一份：
+
+```bash
+cmake --list-presets                 # windows-msvc / windows-mingw
+cmake --preset windows-msvc          # 配置到 build/msvc
+cmake --build --preset windows-msvc  # 产物 dist/belive.exe
+cmake --preset windows-mingw         # 配置到 build/mingw（需要 MSYS2 mingw64，路径见 preset）
+cmake --build --preset windows-mingw
+```
+
+### VS Code
+
+装两个扩展：**CMake Tools**（`ms-vscode.cmake-tools`）与 **C/C++**（`ms-vscode.cpptools`，
+仓库的 `.vscode/extensions.json` 会提示）。打开目录后直接按 `F7` 构建即可，配置来自：
+
+- `.vscode/settings.json` 里 `"cmake.useCMakePresets": "always"` —— 让 CMake Tools 用
+  `CMakePresets.json`，而不是让它按 "kit" 自己挑生成器
+- 左下角状态栏可以切 preset：`windows-msvc`（默认，装了 VS 2022 就能用）或
+  `windows-mingw`（MSYS2）
+
+为什么必须走 preset：CMake Tools 默认把工作区根下的 `build/` 当构建目录，并且按 kit 决定
+生成器。只要 `build/` 里已经有一份别的生成器的缓存（比如先用 Ninja 配过一次），再选
+Visual Studio kit 就会直接失败：
+
+```
+CMake Error: Error: generator : Visual Studio 17 2022
+Does not match the generator used previously: Ninja
+Either remove the CMakeCache.txt file and CMakeFiles directory or choose a different binary directory.
+```
+
+preset 把每个工具链的目录分开（`build/msvc`、`build/mingw`），不会再撞；要换工具链就换
+preset，不要删缓存硬来。
 
 运行：`dist/belive.exe`（资源按「exe 所在目录 /resources」解析，所以别把 exe 单独拷走）。
 截图自检：`dist/belive.exe --screenshot shot.png --frames 10`。
