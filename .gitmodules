@@ -1,0 +1,3 @@
+[submodule "3rd/BekUI"]
+	path = 3rd/BekUI
+	url = https://github.com/beiklive/BekUI.git

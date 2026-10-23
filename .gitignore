@@ -1,0 +1,14 @@
+# 构建产物
+build/
+dist/
+
+# CMake / IDE
+cmake-build-*/
+CMakeUserPresets.json
+.vs/
+.vscode/
+.idea/
+
+# Windows / macOS 杂项
+Thumbs.db
+.DS_Store
