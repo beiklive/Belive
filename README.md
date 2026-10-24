@@ -8,7 +8,8 @@ UI 宿主程序。界面库用 [BekUI](https://github.com/beiklive/BekUI)（`bkl
 ```
 3rd/BekUI/        三方库：BekUI（含它自己的子模块：SDL3 / imgui / yoga / tweeny / stb / json / webp / lunasvg / plutovg）
 src/main.cpp      主程序入口（当前是最小宿主：链进 bklv、起窗口、读 exe 旁边的 resources/）
-resources/        Belive 自己的资源覆盖层（自有主题 resources/theme/belive/）
+resources/        资源树（**自有**，构建只拷这一份：字体 / 文案 / 主题 / 音效；含自有主题 theme/belive/）
+scripts/          sync-resources.ps1（从 3rd/BekUI/resources 增量拉新素材）
 CMakeLists.txt    构建入口
 CMakePresets.json 两套 Windows 工具链的 preset（windows-msvc / windows-mingw）
 .vscode/          共享的编辑器配置（CMake Tools 走 preset、C++ 标准、推荐扩展）
@@ -99,21 +100,33 @@ preset，不要删缓存硬来。
 运行：`dist/belive.exe`（资源按「exe 所在目录 /resources」解析，所以别把 exe 单独拷走）。
 截图自检：`dist/belive.exe --screenshot shot.png --frames 10`。
 
-## 样式放哪里
+## 资源与样式
 
 资源**只在运行时从 exe 旁边的 `dist/resources` 读**（`bklv/core/resource.cpp` 用
-`SDL_GetBasePath()`；Switch 上是 `romfs:/`）。`dist/resources` 是构建产物：
+`SDL_GetBasePath()`；Switch 上是 `romfs:/`）。`dist/resources` 是构建产物，由仓库根的
+`resources/` 整目录拷过去（先删后拷）：
 
 ```
-3rd/BekUI/resources/  先整目录拷到 dist/resources（公共素材：字体、文案、默认主题、音效）
-resources/            Belive 自己的覆盖层，拷在**后面**，同名覆盖（自有主题、自有图片）
+resources/  --(cmake -E copy_directory)-->  dist/resources
 ```
 
-所以改样式改这两处之一，**不要改 `dist/resources`**（下次构建会被删掉重建）：
+这是资源的**唯一来源**：Belive 全量接管了资源树，构建不再读 `3rd/BekUI/resources`，
+所以字体、文案、主题、音效都在这里改，不用碰子模块。
 
-- 要**改 Belive 自己的外观**：`resources/theme/belive/`（已在用）
-- 要改公共默认值（所有主题共享的底子）：`3rd/BekUI/resources/theme/default/`，但那是子模块，
-  dirty 之后 `git submodule update` 就丢，只有确认要贡献回 BekUI 时才这么干
+```
+resources/
+├─ font/                       字体（switch_icons.ttf、MaterialIcons-Regular.ttf）
+├─ i18n/                       文案（en-US / zh-Hans / pinyin.json）
+├─ focus_ring_gradient.png     焦点环的渐变色带
+├─ audio/                      音效 wav（sound.json 里写 "@res/audio/x.wav"）
+└─ theme/
+   ├─ themes.json              {"default": ..., "available": [...]}，只列真实存在的主题
+   ├─ default/                 默认主题（库的原始素材，可直接改）
+   ├─ glass/                   库自带的另一套（样板：只覆盖 7 个文件）
+   └─ belive/                  Belive 自己的主题（启动时 app.setTheme("belive")）
+```
+
+**不要手改 `dist/resources`**（下次构建会被删掉重建）。
 
 `resources/theme/belive/` 的结构（最小主题，其余全部回退 default）：
 
@@ -132,7 +145,21 @@ sound.json                   （可选）音效表，缺省继承 default
   挪文件位置等于改名
 - 颜色/数值按 key 回退 default，外观文件按整份文件回退 → 想改一点点就往薄了写
 - 新主题要在启动时选中：`app.setTheme("belive")`（`src/main.cpp` 里已经这么做了），
-  或临时用环境变量 `BKLV_THEME=belive`；`themes.json` 的 `available` 只影响换肤列表
+  或临时用环境变量 `BKLV_THEME=belive`；`themes.json` 的 `available` 只影响换肤列表，
+  不在里面也能 `setTheme()`
+
+### 从 BekUI 拉新素材
+
+资源树是自有的，所以 BekUI 以后新增的字体/主题文件/音效不会自己过来。用脚本做增量对比：
+
+```powershell
+powershell -NoProfile -File scripts/sync-resources.ps1                 # 只看差异，不动文件
+powershell -NoProfile -File scripts/sync-resources.ps1 -Apply          # 拉"库里有、我们没有"的文件
+powershell -NoProfile -File scripts/sync-resources.ps1 -Apply -Force   # 连内容不同的也覆盖（会盖掉你的改动）
+```
+
+脚本**只增不删**：Belive 独有的文件（比如 `theme/belive/`）永远不会被它删掉或覆盖，
+除非你显式加 `-Force`。
 
 ## 更新三方库
 

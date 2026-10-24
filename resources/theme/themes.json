@@ -1,0 +1,9 @@
+{
+  "$comment": "Belive 的资源树是自有的（不再从 3rd/BekUI/resources 拷），这个清单归我们改：available 只列真实存在的目录，换肤列表才不会点到空主题。",
+  "default": "default",
+  "available": [
+    "default",
+    "glass",
+    "belive"
+  ]
+}

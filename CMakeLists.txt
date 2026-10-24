@@ -85,40 +85,29 @@ set_target_properties(belive PROPERTIES
 # ---------------------------------------------------------------------------
 #
 # bklv 按「可执行文件目录/resources/...」找资源（见 bklv/core/resource.hpp），
-# 所以字体 / 文案 / 主题这三样必须躺在 exe 旁边。公共素材从三方库里拷；
-# Belive 自己的东西（自有主题、自有图片）放在仓库根 `resources/`，作为**覆盖层**
-# 在库的资源和之后叠上去 —— 这样不用改子模块，升级 BekUI 也不会打架。
+# 所以字体 / 文案 / 主题 / 音效必须躺在 exe 旁边。
+#
+# **资源的唯一来源是仓库根的 `resources/`**（Belive 全量接管，不再从
+# `3rd/BekUI/resources` 拷）。这样改字体、主题、音效都不用碰子模块，升级 BekUI
+# 也不会跟我们的资源打架。库那边新增/更新了素材时，用
+# `scripts/sync-resources.ps1` 做增量对比后再挑着拉进来。
 #
 # 先删后拷（不是只 copy_directory）：copy_directory 只加不删，主题目录改布局之后
-# 旧文件会一直留着，骗过「磁盘 vs theme.json 的 files[]」这类校验。
+# 旧文件会一直留在 dist 里，骗过「磁盘 vs theme.json 的 files[]」这类校验。
 
-set(BELIVE_RESOURCE_SRC "${BEKUI_DIR}/resources")
-if(EXISTS "${BELIVE_RESOURCE_SRC}")
-    add_custom_target(belive_resources
-        COMMAND ${CMAKE_COMMAND} -E remove_directory "${BELIVE_OUT_DIR}/resources"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${BELIVE_RESOURCE_SRC}" "${BELIVE_OUT_DIR}/resources"
-        COMMENT "同步 BekUI 的 resources/ 到 ${BELIVE_OUT_DIR}"
-        VERBATIM
-    )
-    add_dependencies(belive belive_resources)
+set(BELIVE_RESOURCE_SRC "${CMAKE_CURRENT_SOURCE_DIR}/resources")
+if(NOT EXISTS "${BELIVE_RESOURCE_SRC}")
+    message(FATAL_ERROR "找不到 ${BELIVE_RESOURCE_SRC}：Belive 的资源树应该在仓库根（字体/文案/主题/音效）")
 endif()
 
-# 覆盖层：`copy_directory` 是合并（同名覆盖、不删已有的），所以顺序很重要 ——
-# 必须排在库的资源之后。Belive 的主题（resources/theme/belive/）就靠这一步进 dist。
-set(BELIVE_RESOURCE_OVERLAY "${CMAKE_CURRENT_SOURCE_DIR}/resources")
-if(EXISTS "${BELIVE_RESOURCE_OVERLAY}")
-    add_custom_target(belive_resources_overlay
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${BELIVE_RESOURCE_OVERLAY}" "${BELIVE_OUT_DIR}/resources"
-        COMMENT "叠加 Belive 自己的 resources/（覆盖层）"
-        VERBATIM
-    )
-    if(TARGET belive_resources)
-        add_dependencies(belive_resources_overlay belive_resources)
-    endif()
-    add_dependencies(belive belive_resources_overlay)
-endif()
+add_custom_target(belive_resources
+    COMMAND ${CMAKE_COMMAND} -E remove_directory "${BELIVE_OUT_DIR}/resources"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${BELIVE_RESOURCE_SRC}" "${BELIVE_OUT_DIR}/resources"
+    COMMENT "同步 ${BELIVE_RESOURCE_SRC} 到 ${BELIVE_OUT_DIR}"
+    VERBATIM
+)
+add_dependencies(belive belive_resources)
 
 message(STATUS "Belive")
 message(STATUS "  后端     : ${BKLV_GRAPHICS}")
